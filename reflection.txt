@@ -1,0 +1,34 @@
+Project Reflection
+
+The customer support agent is designed around Amazon Bedrock AgentCore
+so that the core agent can remain focused on reasoning, while external
+capabilities are exposed through dedicated tools. A key integration was
+the AgentCore Gateway using the Model Context Protocol (MCP). I used an
+API Gateway target for retrieving customer and order information, a
+Lambda target is used for refund operations. This separation keeps
+external business operations independent and allows additional tools to
+be added without significantly changing the agent itself.
+
+One of the main challenges I encountered was authentication between the
+deployed AgentCore runtime and the Gateway. The Gateway initially
+returned an authorisation error even though the integration worked
+during local testing. I traced the problem to the runtime execution role
+and added the required bedrock-agentcore:InvokeGateway permission. I
+also encountered a similar permissions issue when testing Knowledge Base
+retrieval and browser access, which were resolved by adding the required
+permissions to the AgentCore runtime role.
+
+One other challenge was cross-session memory appearing not to work
+immediately. Upon reviewing the CloudWatch logs, I found that memory
+events were being created, but long-term memory processing was
+asynchronous. After allowing processing time and testing again with the
+same customer ID and a different session ID, the stored preference was
+successfully recalled.
+
+For production, security and observability would be important
+considerations. The runtime should use least-privilege IAM permissions
+rather than broad access, while CloudWatch logging and tracing should be
+used to monitor tool calls, failures, latency, and memory behaviour.
+Cost should also be considered because model inference, Knowledge Base
+retrieval, browser sessions, and external tool invocations can all
+contribute to operating costs as usage scales.
